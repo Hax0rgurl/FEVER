@@ -221,6 +221,7 @@ body{
     first.addEventListener('loadedmetadata', schedule, { once:true });
     play(0);
   }
+  arm(1);          // have the next clip in hand before the first crossfade
   schedule();
 
   // Browsers that block muted autoplay will start on the first interaction.
