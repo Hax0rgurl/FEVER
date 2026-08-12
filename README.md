@@ -72,6 +72,40 @@ ffmpeg -i in.mov -vf "scale=1920:1080:force_original_aspect_ratio=increase,crop=
 ffmpeg -y -ss 2 -i video/01.mp4 -frames:v 1 -q:v 6 video/01.jpg
 ```
 
+## Music
+
+A **Sound** button, bottom right of both the entrance and the deck. Eleven
+tracks, ~74 minutes, in a fixed order — Seashell opens, always. No shuffle.
+
+```
+music/tracks.js   the set — edit this to change songs or order
+music/player.js   the widget (shared by index.html and deck.html)
+```
+
+Three things about the implementation that are deliberate:
+
+**Explicit video IDs, not `list=<playlistId>`.** The source playlist refuses to
+embed — the player returns "This video is unavailable" — even though all 100
+videos in it are public and play fine individually. Driving the player from an
+array of IDs sidesteps that entirely, and means one rotted upload can't take
+the whole set down.
+
+**It never autoplays.** Music starts only when someone presses the button. An
+earlier version resumed automatically from `sessionStorage`, which meant every
+open tab and every reload layered another song on top of the last one. If a
+previous page in the session had music running, the button reads **Resume** and
+picks the track back up on click — but a human still has to click. A
+`BroadcastChannel` lock backs this up: if a second tab starts playing, the first
+stands down.
+
+**The player stays visible.** YouTube's terms don't permit hiding the player and
+using the audio alone. Since these uploads are static record-label shots, the
+small frame reads as sleeve art rather than video.
+
+Every track was verified playable on `https://hax0rgurl.github.io` — note that
+the same check run against `http://127.0.0.1` reports spurious error 150s, so
+test embedding on the real origin, not locally.
+
 ## Editing
 
 `index.html` at the repo root is the built artifact — don't hand-edit it, it's

@@ -108,7 +108,9 @@ body{
 .enter span{transition:transform .2s}
 .enter:hover span{transform:translateX(4px)}
 
-.foot{display:flex; justify-content:space-between; align-items:flex-end; gap:1rem}
+/* keep the footer line clear of the fixed sound widget */
+.foot{display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; padding-right:124px}
+@media (max-width:640px){ .foot{padding-right:0} }
 .ticks{display:flex; gap:.45rem; align-items:center}
 .ticks button{
   appearance:none; background:none; border:0; padding:.5rem .1rem; cursor:pointer;
@@ -239,5 +241,8 @@ body{
   });
 })();
 </script>
+
+<script src="music/tracks.js"></script>
+<script src="music/player.js"></script>
 </body>
 </html>
