@@ -2,7 +2,8 @@
 
 A limited series. Miami, 1994–1997.
 
-**Live:** https://hax0rgurl.github.io/FEVER/
+**Live:** https://hax0rgurl.github.io/FEVER/ — entrance
+**Deck:** https://hax0rgurl.github.io/FEVER/deck.html — the 19 slides
 
 All 19 slides as a single self-contained web page. Every image, style and script is
 inlined — the page makes **zero network requests**, so it works from a web server, a
@@ -29,6 +30,47 @@ if you need a PDF.
 (Ep 9–16) · 11. Main Characters — Fever Crew · 12. Desired Main Cast ·
 13–14. Desired Supporting Cast · 15. The Published Book · 16. Photos ·
 17. Mood Board — Colour · 18. Miami Nightlife 1995 · 19. Can't Stop Fever
+
+## The entrance video slots
+
+`index.html` cycles three full-bleed clips behind the wordmark, crossfading
+between them. Drop files in and they just work — nothing to wire up.
+
+```
+video/01.mp4   +  video/01.jpg   ← poster, shown before the clip paints
+video/02.mp4   +  video/02.jpg
+video/03.mp4   +  video/03.jpg
+```
+
+**Spec**
+
+| | |
+|---|---|
+| Container | `.mp4`, H.264, `yuv420p`, `+faststart` |
+| Size | **1920×1080** (16:9). Anything else is cropped to fill. |
+| Duration | **5s.** The page reads each clip's real duration and holds for it, so other lengths work — 5s just gives the even cadence. |
+| Audio | none needed; the videos play muted |
+| Loop | seamless is nicer but not required — the crossfade covers the seam |
+
+A **missing clip silently falls back to its poster** and keeps cycling, so the
+page never looks broken while you're still generating. That's why `02` and `03`
+ship as stills.
+
+Footage is graded in-page (`saturate(.72) contrast(1.08) brightness(.82)`) so it
+sits behind the type — render clips brighter than you want them to look.
+
+Current state: `01.mp4` is a Runway Gen-3 clip (960×576, 24fps, 10.5s) built
+from the foam-night photograph. It's below 1080p so it softens when blown up
+full-bleed; worth re-rendering at 1920×1080 when convenient. `02` and `03` are
+posters awaiting clips.
+
+To re-encode anything to spec:
+
+```bash
+ffmpeg -i in.mov -vf "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080" \
+  -an -c:v libx264 -crf 22 -preset slow -pix_fmt yuv420p -movflags +faststart video/01.mp4
+ffmpeg -y -ss 2 -i video/01.mp4 -frames:v 1 -q:v 6 video/01.jpg
+```
 
 ## Editing
 
