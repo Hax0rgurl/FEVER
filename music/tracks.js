@@ -1,17 +1,15 @@
 /* FEVER — score
  *
- * "Anything to Anything" — original music. Played in numbered order,
- * 01 through 16. Self-hosted, so: no ads, no third-party player, no
- * rights to clear.
+ * "Artist - Song Name" Played in numbered order,
+ * 01 through 16. Self-hosted
  *
- * `t` is what shows in the bar. Drop real titles in whenever you have
- * them — nothing else needs to change.
+ * `t` is what shows in the bar. Drop real titles in, but nothing else needs to change.
  */
 window.FEVER_TRACKS = [
   { f: "01.mp3", t: "Skylab - Seashell" },
   { f: "02.mp3", t: "Rising High Collective - Feel The Fire" },
   { f: "03.mp3", t: "DJ Icey - Love" },
-  { f: "04.mp3", t: "Rising High Collective - Liquid" },
+  { f: "04.mp3", t: "DJ Icey - Low Down Good Girl" },
   { f: "05.mp3", t: "Sesame's Treat" },
   { f: "06.mp3", t: "Bombscare - 2 Bad Mice" },
   { f: "07.mp3", t: "Josh Wink - Higher State of Consciousness" },
@@ -22,7 +20,7 @@ window.FEVER_TRACKS = [
   { f: "12.mp3", t: "HardKiss - OBE" },
   { f: "13.mp3", t: "Anything to Anything · XIII" },
   { f: "14.mp3", t: "Dj Stryke - Stay In Love" },
-  { f: "15.mp3", t: "Anything to Anything · XV" },
-  { f: "16.mp3", t: "Anything to Anything · XVI" }
+  { f: "15.mp3", t: "Trip Theory - 8 Days a Tweak" },
+  { f: "16.mp3", t: "Rising High Collective - Liquid" }
 ];
 window.FEVER_AUDIO_DIR = "music/audio/";
