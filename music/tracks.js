@@ -19,7 +19,6 @@ window.FEVER_TRACKS = [
   { f: "11.mp3", t: "Paul Van Dyke - Forbidden Fruit" },
   { f: "12.mp3", t: "HardKiss - OBE" },
   { f: "13.mp3", t: "K5 - Passion" },
-  { f: "14.mp3", t: "Dj Stryke - Stay In Love" },
   { f: "15.mp3", t: "Trip Theory - 8 Days a Tweak" },
 ];
 window.FEVER_AUDIO_DIR = "music/audio/";
