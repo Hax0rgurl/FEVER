@@ -8,20 +8,20 @@
  * them — nothing else needs to change.
  */
 window.FEVER_TRACKS = [
-  { f: "01.mp3", t: "Anything to Anything · I" },
-  { f: "02.mp3", t: "Anything to Anything · II" },
-  { f: "03.mp3", t: "Anything to Anything · III" },
-  { f: "04.mp3", t: "Anything to Anything · IV" },
-  { f: "05.mp3", t: "Anything to Anything · V" },
-  { f: "06.mp3", t: "Anything to Anything · VI" },
-  { f: "07.mp3", t: "Anything to Anything · VII" },
+  { f: "01.mp3", t: "Skylab - Seashell" },
+  { f: "02.mp3", t: "Rising High Collective - Feel The Fire" },
+  { f: "03.mp3", t: "DJ Icey - Love" },
+  { f: "04.mp3", t: "Rising High Collective - Liquid" },
+  { f: "05.mp3", t: "Sesame's Treat" },
+  { f: "06.mp3", t: "Bombscare - 2 Bad Mice" },
+  { f: "07.mp3", t: "Josh Wink - Higher State of Consciousness" },
   { f: "08.mp3", t: "Anything to Anything · VIII" },
-  { f: "09.mp3", t: "Anything to Anything · IX" },
-  { f: "10.mp3", t: "Anything to Anything · X" },
-  { f: "11.mp3", t: "Anything to Anything · XI" },
-  { f: "12.mp3", t: "Anything to Anything · XII" },
+  { f: "09.mp3", t: "Dynamix II" },
+  { f: "10.mp3", t: "The Cotton Club - Nu Jack" },
+  { f: "11.mp3", t: "Paul Van Dyke _ Forbidden Fruit" },
+  { f: "12.mp3", t: "HardKiss - OBE" },
   { f: "13.mp3", t: "Anything to Anything · XIII" },
-  { f: "14.mp3", t: "Anything to Anything · XIV" },
+  { f: "14.mp3", t: "Dj Stryke - Stay In Love" },
   { f: "15.mp3", t: "Anything to Anything · XV" },
   { f: "16.mp3", t: "Anything to Anything · XVI" }
 ];
