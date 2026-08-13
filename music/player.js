@@ -119,6 +119,7 @@
   }
 
   var pendingSeek = 0;
+  var wantPlay = false;      // what the listener asked for, not what the element is doing
 
   function load(n, at) {
     idx = (n + TRACKS.length) % TRACKS.length;
@@ -133,12 +134,16 @@
   }
 
   function paint() {
-    var playing = !audio.paused && !audio.ended;
+    // Show the *intent*, not the instantaneous element state. Changing src
+    // pauses the element while the next file buffers; without this the button
+    // flickers back to Play mid-skip and reads as a dead control.
+    var playing = wantPlay || (!audio.paused && !audio.ended);
     playBtn.innerHTML = playing ? ICON.pause : ICON.play;
     playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
     var d = audio.duration;
     if (!seeking) fill.style.width = (isFinite(d) && d ? (audio.currentTime / d) * 100 : 0) + '%';
     timeEl.textContent = fmt(audio.currentTime) + ' / ' + (isFinite(d) ? fmt(d) : '0:00');
+    idEl.style.opacity = (wantPlay && audio.paused) ? '.45' : '1';   // buffering
   }
 
   /* ---------- one tab at a time ---------- */
@@ -150,6 +155,7 @@
     if (chan) { try { chan.postMessage({ t: 'claim', id: ME }); } catch (e) {} }
   }
   function standDown() {
+    wantPlay = false;
     audio.pause();
     try { sessionStorage.setItem(K.on, '0'); } catch (e) {}
     paint();
@@ -163,39 +169,72 @@
     if (e.key === 'fever.music.owner' && e.newValue && e.newValue.indexOf(ME + ':') !== 0) standDown();
   });
 
-  /* ---------- controls ---------- */
-  function play() {
-    claim();
-    if (!audio.src) {
-      var at = parseFloat(sessionStorage.getItem(K.t) || '0') || 0;
-      load(idx, at);
-    }
+  /* ---------- controls ----------
+   * Skipping swaps audio.src, which pauses the element while several MB of
+   * the next file arrive. A single play() call at that moment can be rejected
+   * ("interrupted by a new load request") and the track sits there silent.
+   * So intent is tracked separately and re-asserted every time the element
+   * says it has enough data.
+   */
+  function attempt() {
+    if (!wantPlay) return;
     var p = audio.play();
-    if (p && p.catch) p.catch(function () { paint(); });
-    try { sessionStorage.setItem(K.on, '1'); } catch (e) {}
+    if (p && p.catch) p.catch(function () { /* retried on canplay below */ });
   }
 
-  playBtn.onclick = function () {
-    if (audio.paused) play();
-    else { audio.pause(); try { sessionStorage.setItem(K.on, '0'); } catch (e) {} }
+  function play() {
+    wantPlay = true;
+    claim();
+    if (!audio.src) load(idx, parseFloat(sessionStorage.getItem(K.t) || '0') || 0);
+    try { sessionStorage.setItem(K.on, '1'); } catch (e) {}
+    attempt();
     paint();
-  };
-  bar.querySelector('#fv-next').onclick = function () { var w = !audio.paused; load(idx + 1, 0); if (w) play(); };
+  }
+
+  function pause() {
+    wantPlay = false;
+    audio.pause();
+    try { sessionStorage.setItem(K.on, '0'); } catch (e) {}
+    paint();
+  }
+
+  ['canplay', 'loadeddata', 'canplaythrough'].forEach(function (ev) {
+    audio.addEventListener(ev, function () { attempt(); paint(); });
+  });
+  audio.addEventListener('waiting', paint);
+  audio.addEventListener('stalled', paint);
+
+  playBtn.onclick = function () { if (wantPlay) pause(); else play(); };
+  bar.querySelector('#fv-next').onclick = function () { load(idx + 1, 0); attempt(); paint(); };
   bar.querySelector('#fv-prev').onclick = function () {
     if (audio.currentTime > 3) { audio.currentTime = 0; return; }   // restart before skipping back
-    var w = !audio.paused; load(idx - 1, 0); if (w) play();
+    load(idx - 1, 0); attempt(); paint();
   };
 
+  // Seeking only lands if the browser can do byte-range requests AND knows the
+  // duration. Guard on `seekable` so a drag on an unseekable stream doesn't
+  // silently do nothing while the fill bar pretends otherwise.
+  function canSeek() {
+    return isFinite(audio.duration) && audio.duration > 0 &&
+           audio.seekable && audio.seekable.length > 0;
+  }
   function seekTo(ev) {
     var r = rail.getBoundingClientRect();
-    var x = ((ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left) / r.width;
-    x = Math.max(0, Math.min(1, x));
+    var cx = ev.touches ? ev.touches[0].clientX : ev.clientX;
+    var x = Math.max(0, Math.min(1, (cx - r.left) / r.width));
     fill.style.width = x * 100 + '%';
-    if (isFinite(audio.duration)) audio.currentTime = x * audio.duration;
+    if (canSeek()) {
+      try { audio.currentTime = x * audio.duration; } catch (e) {}
+    }
   }
-  rail.addEventListener('pointerdown', function (e) { seeking = true; seekTo(e); rail.setPointerCapture(e.pointerId); });
+  rail.addEventListener('pointerdown', function (e) {
+    seeking = true; seekTo(e);
+    try { rail.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  });
   rail.addEventListener('pointermove', function (e) { if (seeking) seekTo(e); });
-  rail.addEventListener('pointerup', function () { seeking = false; });
+  rail.addEventListener('pointerup', function (e) { if (seeking) { seekTo(e); seeking = false; attempt(); } });
+  rail.addEventListener('pointercancel', function () { seeking = false; });
   rail.addEventListener('keydown', function (e) {
     if (!isFinite(audio.duration)) return;
     if (e.key === 'ArrowRight') { audio.currentTime = Math.min(audio.duration, audio.currentTime + 5); e.preventDefault(); }
@@ -218,8 +257,8 @@
   audio.addEventListener('play', paint);
   audio.addEventListener('pause', paint);
   // A missing or unplayable file steps to the next rather than stalling.
-  audio.addEventListener('error', function () { if (audio.src) load(idx + 1, 0); });
-  audio.addEventListener('ended', function () { load(idx + 1, 0); play(); });
+  audio.addEventListener('error', function () { if (audio.src) { load(idx + 1, 0); attempt(); } });
+  audio.addEventListener('ended', function () { load(idx + 1, 0); wantPlay = true; attempt(); paint(); });
 
   // Space toggles playback, unless the deck is using it to advance a slide
   // or the user is typing in a field.
@@ -243,8 +282,29 @@
   // Play and nothing is lost.
   if (sessionStorage.getItem(K.on) === '1') {
     load(idx, parseFloat(sessionStorage.getItem(K.t) || '0') || 0);
+    wantPlay = true;
     claim();
-    var resumed = audio.play();
-    if (resumed && resumed.catch) resumed.catch(function () { paint(); });
+    attempt();
+    paint();
   }
+
+  // Diagnostic handle. Cheap to keep, and the alternative is being unable to
+  // inspect the element at all when something misbehaves in the wild.
+  window.FEVER_PLAYER = {
+    audio: audio,
+    next: function () { load(idx + 1, 0); attempt(); paint(); },
+    state: function () {
+      return {
+        track: idx + 1, src: (audio.src || '').split('/').pop(),
+        wantPlay: wantPlay, paused: audio.paused,
+        currentTime: +audio.currentTime.toFixed(2),
+        duration: isFinite(audio.duration) ? +audio.duration.toFixed(2) : null,
+        readyState: audio.readyState, networkState: audio.networkState,
+        seekableRanges: audio.seekable ? audio.seekable.length : 0,
+        buffered: audio.buffered && audio.buffered.length
+          ? +audio.buffered.end(audio.buffered.length - 1).toFixed(1) : 0,
+        error: audio.error ? audio.error.code : null
+      };
+    }
+  };
 })();
