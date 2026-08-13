@@ -74,37 +74,45 @@ ffmpeg -y -ss 2 -i video/01.mp4 -frames:v 1 -q:v 6 video/01.jpg
 
 ## Music
 
-A **Sound** button, bottom right of both the entrance and the deck. Eleven
-tracks, ~74 minutes, in a fixed order — Seashell opens, always. No shuffle.
+A bar player pinned to the bottom of both the entrance and the deck.
+**"Anything to Anything" — 16 original tracks, 1h41m, played in numbered
+order.** Self-hosted, so there are no ads, no third-party player, and
+nothing to clear.
 
 ```
-music/tracks.js   the set — edit this to change songs or order
-music/player.js   the widget (shared by index.html and deck.html)
+music/audio/01.mp3 … 16.mp3   the tracks (your MP3s, copied, not re-encoded)
+music/tracks.js               order + titles — edit this
+music/player.js               the bar
 ```
 
-Three things about the implementation that are deliberate:
+Titles in `tracks.js` are placeholders (`Anything to Anything · I …`).
+Drop the real ones in; nothing else needs to change.
 
-**Explicit video IDs, not `list=<playlistId>`.** The source playlist refuses to
-embed — the player returns "This video is unavailable" — even though all 100
-videos in it are public and play fine individually. Driving the player from an
-array of IDs sidesteps that entirely, and means one rotted upload can't take
-the whole set down.
+**Behaviour worth not undoing:**
 
-**It never autoplays.** Music starts only when someone presses the button. An
-earlier version resumed automatically from `sessionStorage`, which meant every
-open tab and every reload layered another song on top of the last one. If a
-previous page in the session had music running, the button reads **Resume** and
-picks the track back up on click — but a human still has to click. A
-`BroadcastChannel` lock backs this up: if a second tab starts playing, the first
-stands down.
+*It never starts on a cold load.* An earlier YouTube-backed build auto-
+resumed from `sessionStorage` on every page load, which meant each open tab
+and each reload layered another song on top of the last. Playback now begins
+on a click. It *does* carry from the entrance into the deck — but only when
+the listener already pressed play in that session, so the music doesn't stop
+at the door.
 
-**The player stays visible.** YouTube's terms don't permit hiding the player and
-using the audio alone. Since these uploads are static record-label shots, the
-small frame reads as sleeve art rather than video.
+*One tab at a time.* A `BroadcastChannel` lock means a second tab starting
+playback pauses the first.
 
-Every track was verified playable on `https://hax0rgurl.github.io` — note that
-the same check run against `http://127.0.0.1` reports spurious error 150s, so
-test embedding on the real origin, not locally.
+*Nothing downloads until play is pressed* (`preload="none"`), so the entrance
+stays fast for anyone who never turns the sound on.
+
+The bar reserves 56px at the bottom; the deck's slide height and its HUD are
+offset to match, so no slide is ever cut off.
+
+### Why not YouTube
+
+An earlier version streamed a period playlist through YouTube's embed. It
+worked — full tracks, driven by explicit video IDs because the `list=`
+parameter refuses to embed — but those uploads are monetised, so **ads played
+over the cover slide**, and no player parameter disables that. Original music
+removes the problem entirely.
 
 ## Editing
 

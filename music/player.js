@@ -1,243 +1,250 @@
-/* FEVER — shared music widget (entrance + deck)
+/* FEVER — bottom bar player (entrance + deck)
  *
- * Plays the RAVE DAYS 1993–96 playlist full-length through YouTube's IFrame
- * player. Two things to know about the implementation:
+ * Self-hosted audio. No YouTube, no ads, no third-party player, nothing
+ * to clear. Plays "Anything to Anything" in numbered order, 01 → 16.
  *
- *  1. It is driven by an explicit array of video IDs, not `list=<playlistId>`.
- *     The playlist parameter fails to embed ("This video is unavailable")
- *     even though every video in it is public and playable on its own.
+ * Two behaviours are deliberate and worth not undoing:
  *
- *  2. The player stays visible whenever audio is playing. YouTube's terms
- *     prohibit hiding the player to use it as an invisible audio bed, so the
- *     panel is small but never display:none while a track runs.
+ *  1. It never starts on its own. An earlier YouTube-backed build auto-
+ *     resumed from sessionStorage on load, which meant every open tab and
+ *     every reload layered another song on top of the last one. Playback
+ *     begins on a click, full stop.
  *
- * State rides in sessionStorage so music survives the jump from the entrance
- * into the deck and resumes mid-track.
+ *  2. A BroadcastChannel lock keeps exactly one tab audible. If a second
+ *     tab starts playing, the first pauses itself.
+ *
+ * Position carries from the entrance into the deck via sessionStorage, so
+ * pressing play on the deck picks the track back up where it left off.
  */
 (function () {
   var TRACKS = window.FEVER_TRACKS || [];
+  var DIR = window.FEVER_AUDIO_DIR || 'music/audio/';
   if (!TRACKS.length) return;
 
-  var K = { on: 'fever.music.on', order: 'fever.music.order', idx: 'fever.music.idx', t: 'fever.music.t' };
-  var player = null, ready = false, order = [], idx = 0, saveTimer = null;
-  // Music never starts on its own. If a previous page in this session had it
-  // running, the button offers to pick the track back up — but a human still
-  // has to press it. Auto-starting meant every open tab and every reload
-  // layered another song on top of the last one.
-  var pendingResume = false;
-
-  /* ---------- order ----------
-   * Deliberately not shuffled. The set is sequenced, and Seashell opens.
-   */
-  order = TRACKS.map(function (_, n) { return n; });
-  idx = parseInt(sessionStorage.getItem(K.idx) || '0', 10) || 0;
-  if (idx < 0 || idx >= order.length) idx = 0;
+  var K = { on: 'fever.music.on', idx: 'fever.music.idx', t: 'fever.music.t' };
+  var idx = parseInt(sessionStorage.getItem(K.idx) || '0', 10) || 0;
+  if (idx < 0 || idx >= TRACKS.length) idx = 0;
+  var seeking = false;
 
   /* ---------- chrome ---------- */
   var css = document.createElement('style');
   css.textContent = [
-    '#fv-music{position:fixed;right:14px;bottom:14px;z-index:2147483000;',
-    'font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,monospace;}',
-    '#fv-btn{display:flex;align-items:center;gap:.6rem;cursor:pointer;appearance:none;',
-    'background:rgba(8,7,10,.82);border:1px solid rgba(239,233,222,.42);color:#efe9de;',
-    'font:inherit;font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;',
-    'padding:.62rem .9rem;backdrop-filter:blur(6px);transition:border-color .2s,color .2s,background .2s;}',
-    '#fv-btn:hover{border-color:#ff3b14;color:#ff3b14}',
-    '#fv-btn b{font-weight:400;letter-spacing:.24em}',
-    '#fv-eq{display:inline-flex;align-items:flex-end;gap:2px;height:10px}',
-    '#fv-eq i{width:2px;background:#ff3b14;height:3px;display:block}',
-    '#fv-music.playing #fv-eq i{animation:fvbar .9s ease-in-out infinite}',
-    '#fv-music.playing #fv-eq i:nth-child(2){animation-delay:.15s}',
-    '#fv-music.playing #fv-eq i:nth-child(3){animation-delay:.3s}',
-    '#fv-music.playing #fv-eq i:nth-child(4){animation-delay:.45s}',
-    '@keyframes fvbar{0%,100%{height:3px}50%{height:10px}}',
-    '#fv-panel{display:none;width:212px;background:rgba(8,7,10,.92);',
-    'border:1px solid rgba(239,233,222,.24);backdrop-filter:blur(8px);margin-bottom:.5rem}',
-    '#fv-music.open #fv-panel{display:block}',
-    // The uploads are static label shots, so this reads as sleeve art rather
-    // than video. It stays visible regardless — YouTube's terms do not allow
-    // hiding the player and using the audio alone.
-    '#fv-frame{width:212px;height:119px;display:block;background:#000}',
-    '#fv-frame iframe{width:100%;height:100%;border:0;display:block}',
-    '#fv-meta{padding:.55rem .65rem;border-top:1px solid rgba(239,233,222,.14)}',
-    '#fv-title{font-size:.58rem;line-height:1.45;color:#efe9de;letter-spacing:.04em;',
-    'white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '#fv-sub{font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(239,233,222,.4);margin-top:.2rem}',
-    '#fv-ctl{display:flex;gap:.3rem;padding:.4rem .5rem .5rem}',
-    '#fv-ctl button{flex:1;cursor:pointer;appearance:none;background:none;color:#efe9de;',
-    'border:1px solid rgba(239,233,222,.2);font:inherit;font-size:.55rem;letter-spacing:.14em;',
-    'text-transform:uppercase;padding:.42rem .2rem;transition:border-color .15s,color .15s}',
-    '#fv-ctl button:hover{border-color:#ff3b14;color:#ff3b14}',
-    '@media (max-width:640px){#fv-panel,#fv-frame{width:180px}#fv-frame{height:101px}}',
-    '@media print{#fv-music{display:none}}'
+    ':root{--fvbar:56px}',
+    '#fv-bar{position:fixed;left:0;right:0;bottom:0;height:var(--fvbar);z-index:2147483000;',
+    'display:flex;align-items:center;gap:clamp(.5rem,1.4vw,1.1rem);',
+    'padding:0 clamp(.6rem,1.8vw,1.3rem);',
+    'background:rgba(6,5,7,.92);backdrop-filter:blur(10px);',
+    'border-top:1px solid rgba(239,233,222,.16);',
+    'font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;',
+    'color:#efe9de;transform:translateY(100%);transition:transform .45s cubic-bezier(.2,.7,.2,1)}',
+    '#fv-bar.up{transform:none}',
+
+    '.fv-b{appearance:none;background:none;border:0;color:#efe9de;cursor:pointer;',
+    'padding:.4rem;line-height:0;flex:none;transition:color .15s;opacity:.85}',
+    '.fv-b:hover{color:#ff3b14;opacity:1}',
+    '.fv-b svg{width:15px;height:15px;display:block;fill:currentColor}',
+    '#fv-play svg{width:20px;height:20px}',
+
+    '#fv-id{flex:none;font-size:.62rem;letter-spacing:.18em;color:#ff3b14;',
+    'min-width:3.4em;text-align:right}',
+    '#fv-name{flex:1 1 auto;min-width:0;font-size:.64rem;letter-spacing:.1em;',
+    'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(239,233,222,.92)}',
+
+    '#fv-seek{flex:2 1 260px;min-width:90px;display:flex;align-items:center;gap:.6rem}',
+    '#fv-rail{position:relative;flex:1;height:16px;display:flex;align-items:center;cursor:pointer}',
+    '#fv-rail::before{content:"";position:absolute;left:0;right:0;height:2px;',
+    'background:rgba(239,233,222,.2)}',
+    '#fv-fill{position:relative;height:2px;width:0;background:#ff3b14;pointer-events:none}',
+    '#fv-fill::after{content:"";position:absolute;right:-3px;top:-2px;width:6px;height:6px;',
+    'background:#ff3b14;opacity:0;transition:opacity .15s}',
+    '#fv-rail:hover #fv-fill::after{opacity:1}',
+    '#fv-time{flex:none;font-size:.56rem;letter-spacing:.1em;color:rgba(239,233,222,.45);',
+    'font-variant-numeric:tabular-nums;min-width:8.4em;text-align:right}',
+
+    '#fv-vol{flex:none;display:flex;align-items:center;gap:.4rem}',
+    '#fv-vol input{width:64px;accent-color:#ff3b14;height:2px;cursor:pointer}',
+    '@media (max-width:900px){#fv-vol,#fv-name{display:none}}',
+    '@media (max-width:560px){#fv-time{min-width:0;font-size:.5rem}}',
+
+    /* make room so nothing sits under the bar */
+    '#fv-bar.up ~ * .hud, body.fv-on .hud{bottom:calc(var(--fvbar) + 14px) !important}',
+    'body.fv-on .foot{padding-bottom:calc(var(--fvbar) - 10px)}',
+    'body.fv-on .scrollcue{bottom:calc(var(--fvbar) + 12px)}',
+    'body.fv-on .deck{height:calc(100svh - var(--fvbar))}',
+    'body.fv-on .sec{min-height:calc(100svh - var(--fvbar))}',
+    '@media print{#fv-bar{display:none}body.fv-on .deck,body.fv-on .sec{height:auto;min-height:auto}}'
   ].join('');
   document.head.appendChild(css);
 
-  var wrap = document.createElement('div');
-  wrap.id = 'fv-music';
-  wrap.innerHTML =
-    '<div id="fv-panel">' +
-      '<div id="fv-frame"><div id="fv-yt"></div></div>' +
-      '<div id="fv-meta"><div id="fv-title">—</div>' +
-      '<div id="fv-sub">Rave Days · Miami · 1993—1996</div></div>' +
-      '<div id="fv-ctl">' +
-        '<button type="button" data-a="prev">Prev</button>' +
-        '<button type="button" data-a="toggle">Pause</button>' +
-        '<button type="button" data-a="next">Next</button>' +
-      '</div>' +
-    '</div>' +
-    '<button id="fv-btn" type="button">' +
-      '<span id="fv-eq"><i></i><i></i><i></i><i></i></span><b>Sound</b>' +
-    '</button>';
-  document.body.appendChild(wrap);
+  var ICON = {
+    play: '<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>',
+    pause: '<svg viewBox="0 0 24 24"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg>',
+    prev: '<svg viewBox="0 0 24 24"><path d="M7 5h2v14H7zM20 5v14L9.5 12z"/></svg>',
+    next: '<svg viewBox="0 0 24 24"><path d="M15 5h2v14h-2zM4 5l10.5 7L4 19z"/></svg>',
+    spk: '<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/></svg>'
+  };
 
-  // The deck has its own bottom-right HUD (slide counter + arrows). Step it
-  // aside so the two never stack. Injected unconditionally rather than behind
-  // a querySelector guard: the deck renders its HUD with React, well after
-  // this script runs, so the element is not there to detect yet. `.hud` only
-  // exists on the deck, so the rule is inert on the entrance.
-  var nudge = document.createElement('style');
-  nudge.textContent =
-    '@media (min-width:760px){.hud{right:246px !important}}' +
-    '@media (max-width:759px){.hud{bottom:62px !important}}';
-  document.head.appendChild(nudge);
+  var bar = document.createElement('div');
+  bar.id = 'fv-bar';
+  bar.innerHTML =
+    '<button class="fv-b" id="fv-prev" type="button" aria-label="Previous track">' + ICON.prev + '</button>' +
+    '<button class="fv-b" id="fv-play" type="button" aria-label="Play">' + ICON.play + '</button>' +
+    '<button class="fv-b" id="fv-next" type="button" aria-label="Next track">' + ICON.next + '</button>' +
+    '<span id="fv-id">01</span>' +
+    '<span id="fv-name">—</span>' +
+    '<span id="fv-seek"><span id="fv-rail" role="slider" aria-label="Seek" tabindex="0">' +
+      '<span id="fv-fill"></span></span><span id="fv-time">0:00 / 0:00</span></span>' +
+    '<span id="fv-vol">' + ICON.spk +
+      '<input type="range" min="0" max="100" value="80" aria-label="Volume"></span>';
+  document.body.appendChild(bar);
+  document.body.classList.add('fv-on');
+  requestAnimationFrame(function () { bar.classList.add('up'); });
 
-  var btn = wrap.querySelector('#fv-btn');
-  var label = wrap.querySelector('#fv-btn b');
-  var titleEl = wrap.querySelector('#fv-title');
-  var toggleBtn = wrap.querySelector('[data-a="toggle"]');
+  var audio = new Audio();
+  audio.preload = 'none';           // nothing downloads until someone presses play
+  audio.volume = 0.8;
 
-  function vid() { return TRACKS[order[idx % order.length]]; }
+  var playBtn = bar.querySelector('#fv-play');
+  var nameEl = bar.querySelector('#fv-name');
+  var idEl = bar.querySelector('#fv-id');
+  var fill = bar.querySelector('#fv-fill');
+  var timeEl = bar.querySelector('#fv-time');
+  var rail = bar.querySelector('#fv-rail');
+  var vol = bar.querySelector('#fv-vol input');
 
-  function paint() {
-    var t = vid();
-    if (t) titleEl.textContent = t.t;
-    var playing = false;
-    try { playing = !!(player && player.getPlayerState && player.getPlayerState() === 1); } catch (e) {}
-    wrap.classList.toggle('playing', playing);
-    label.textContent = playing ? 'Playing'
-      : wrap.classList.contains('open') ? 'Paused'
-      : pendingResume ? 'Resume' : 'Sound';
-    toggleBtn.textContent = playing ? 'Pause' : 'Play';
+  function fmt(s) {
+    if (!isFinite(s) || s < 0) s = 0;
+    var m = Math.floor(s / 60), r = Math.floor(s % 60);
+    return m + ':' + (r < 10 ? '0' : '') + r;
   }
 
-  function persist() {
-    try {
-      sessionStorage.setItem(K.idx, String(idx));
-      if (player && player.getCurrentTime) sessionStorage.setItem(K.t, String(player.getCurrentTime() || 0));
-    } catch (e) {}
-  }
+  var pendingSeek = 0;
 
-  function go(n) {
-    idx = (n + order.length) % order.length;
-    try { sessionStorage.setItem(K.t, '0'); } catch (e) {}
-    persist();
-    if (ready) player.loadVideoById(vid().i);
+  function load(n, at) {
+    idx = (n + TRACKS.length) % TRACKS.length;
+    audio.src = DIR + TRACKS[idx].f;
+    audio.preload = 'auto';
+    // currentTime can't be set until duration is known, so hold it.
+    pendingSeek = at || 0;
+    idEl.textContent = String(idx + 1).padStart(2, '0');
+    nameEl.textContent = TRACKS[idx].t;
+    try { sessionStorage.setItem(K.idx, String(idx)); } catch (e) {}
     paint();
   }
 
-  function build(startAt) {
-    window.onYouTubeIframeAPIReady = function () {
-      player = new YT.Player('fv-yt', {
-        videoId: vid().i,
-        playerVars: {
-          origin: location.origin, autoplay: 1, playsinline: 1,
-          rel: 0, modestbranding: 1, start: Math.floor(startAt || 0)
-        },
-        events: {
-          onReady: function (e) { ready = true; e.target.playVideo(); paint(); },
-          // A dead or embedding-disabled upload just advances. The playlist is
-          // 30 years of other people's uploads; some will rot. Never stall.
-          onError: function () { go(idx + 1); },
-          onStateChange: function (e) {
-            if (e.data === 0) go(idx + 1);     // ended
-            paint();
-          }
-        }
-      });
-    };
-    var s = document.createElement('script');
-    s.src = 'https://www.youtube.com/iframe_api';
-    document.head.appendChild(s);
-    clearInterval(saveTimer);
-    saveTimer = setInterval(persist, 2000);
+  function paint() {
+    var playing = !audio.paused && !audio.ended;
+    playBtn.innerHTML = playing ? ICON.pause : ICON.play;
+    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    var d = audio.duration;
+    if (!seeking) fill.style.width = (isFinite(d) && d ? (audio.currentTime / d) * 100 : 0) + '%';
+    timeEl.textContent = fmt(audio.currentTime) + ' / ' + (isFinite(d) ? fmt(d) : '0:00');
   }
 
-  /* ---------- one tab at a time ----------
-   * sessionStorage is copied into a tab opened from this one, and the resume
-   * block below fires on every load — so without a lock, two open tabs means
-   * two songs playing over each other. Whichever tab starts most recently
-   * owns the audio; the others stand down.
-   */
+  /* ---------- one tab at a time ---------- */
   var ME = Math.random().toString(36).slice(2);
   var chan = null;
   try { chan = new BroadcastChannel('fever-music'); } catch (e) {}
-
   function claim() {
     try { localStorage.setItem('fever.music.owner', ME + ':' + Date.now()); } catch (e) {}
     if (chan) { try { chan.postMessage({ t: 'claim', id: ME }); } catch (e) {} }
   }
-
   function standDown() {
-    if (player && player.pauseVideo) { try { player.pauseVideo(); } catch (e) {} }
-    wrap.classList.remove('open');
+    audio.pause();
     try { sessionStorage.setItem(K.on, '0'); } catch (e) {}
     paint();
   }
-
   if (chan) {
     chan.onmessage = function (e) {
       if (e && e.data && e.data.t === 'claim' && e.data.id !== ME) standDown();
     };
   }
-  // Safari and anything without BroadcastChannel still gets the storage event.
   window.addEventListener('storage', function (e) {
     if (e.key === 'fever.music.owner' && e.newValue && e.newValue.indexOf(ME + ':') !== 0) standDown();
   });
 
-  function start(resumeAt) {
+  /* ---------- controls ---------- */
+  function play() {
     claim();
-    wrap.classList.add('open');
+    if (!audio.src) {
+      var at = parseFloat(sessionStorage.getItem(K.t) || '0') || 0;
+      load(idx, at);
+    }
+    var p = audio.play();
+    if (p && p.catch) p.catch(function () { paint(); });
     try { sessionStorage.setItem(K.on, '1'); } catch (e) {}
-    if (!player) build(resumeAt);
-    else { player.playVideo(); }
-    paint();
   }
 
-  function stop() {
-    try { sessionStorage.setItem(K.on, '0'); } catch (e) {}
-    if (player && player.pauseVideo) player.pauseVideo();
-    wrap.classList.remove('open');
+  playBtn.onclick = function () {
+    if (audio.paused) play();
+    else { audio.pause(); try { sessionStorage.setItem(K.on, '0'); } catch (e) {} }
     paint();
+  };
+  bar.querySelector('#fv-next').onclick = function () { var w = !audio.paused; load(idx + 1, 0); if (w) play(); };
+  bar.querySelector('#fv-prev').onclick = function () {
+    if (audio.currentTime > 3) { audio.currentTime = 0; return; }   // restart before skipping back
+    var w = !audio.paused; load(idx - 1, 0); if (w) play();
+  };
+
+  function seekTo(ev) {
+    var r = rail.getBoundingClientRect();
+    var x = ((ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left) / r.width;
+    x = Math.max(0, Math.min(1, x));
+    fill.style.width = x * 100 + '%';
+    if (isFinite(audio.duration)) audio.currentTime = x * audio.duration;
   }
-
-  btn.addEventListener('click', function () {
-    if (wrap.classList.contains('open')) { stop(); return; }
-    var at = 0;
-    if (pendingResume) {
-      at = parseFloat(sessionStorage.getItem(K.t) || '0') || 0;
-      pendingResume = false;
-    }
-    start(at);
+  rail.addEventListener('pointerdown', function (e) { seeking = true; seekTo(e); rail.setPointerCapture(e.pointerId); });
+  rail.addEventListener('pointermove', function (e) { if (seeking) seekTo(e); });
+  rail.addEventListener('pointerup', function () { seeking = false; });
+  rail.addEventListener('keydown', function (e) {
+    if (!isFinite(audio.duration)) return;
+    if (e.key === 'ArrowRight') { audio.currentTime = Math.min(audio.duration, audio.currentTime + 5); e.preventDefault(); }
+    if (e.key === 'ArrowLeft') { audio.currentTime = Math.max(0, audio.currentTime - 5); e.preventDefault(); }
   });
 
-  wrap.querySelector('#fv-ctl').addEventListener('click', function (ev) {
-    var a = ev.target.getAttribute && ev.target.getAttribute('data-a');
-    if (!a || !ready) return;
-    if (a === 'next') go(idx + 1);
-    else if (a === 'prev') go(idx - 1);
-    else if (a === 'toggle') {
-      if (player.getPlayerState() === 1) player.pauseVideo(); else player.playVideo();
-      setTimeout(paint, 120);
+  vol.oninput = function () { audio.volume = vol.value / 100; };
+
+  audio.addEventListener('timeupdate', function () {
+    paint();
+    try { sessionStorage.setItem(K.t, String(audio.currentTime || 0)); } catch (e) {}
+  });
+  audio.addEventListener('loadedmetadata', function () {
+    if (pendingSeek > 0 && isFinite(audio.duration)) {
+      try { audio.currentTime = Math.min(pendingSeek, Math.max(0, audio.duration - 1)); } catch (e) {}
     }
+    pendingSeek = 0;
+    paint();
+  });
+  audio.addEventListener('play', paint);
+  audio.addEventListener('pause', paint);
+  // A missing or unplayable file steps to the next rather than stalling.
+  audio.addEventListener('error', function () { if (audio.src) load(idx + 1, 0); });
+  audio.addEventListener('ended', function () { load(idx + 1, 0); play(); });
+
+  // Space toggles playback, unless the deck is using it to advance a slide
+  // or the user is typing in a field.
+  window.addEventListener('keydown', function (e) {
+    if (e.key !== ' ' && e.code !== 'Space') return;
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (document.querySelector('.deck')) return;      // deck already owns Space
+    e.preventDefault();
+    playBtn.onclick();
   });
 
-  window.addEventListener('pagehide', persist);
-  window.addEventListener('beforeunload', persist);
-
-  // Carry the music across the entrance → deck navigation, but never start it
-  // unasked — the button just offers to pick up where the last page left off.
-  pendingResume = sessionStorage.getItem(K.on) === '1' &&
-                  (parseFloat(sessionStorage.getItem(K.t) || '0') || 0) > 1;
+  idEl.textContent = String(idx + 1).padStart(2, '0');
+  nameEl.textContent = TRACKS[idx].t;
   paint();
+
+  // Carry playback across entrance → deck, so the music doesn't stop at the
+  // door. Only ever when the listener explicitly started it earlier in this
+  // session — never on a cold load — and the tab lock still guarantees one
+  // audible tab. If the browser declines the autoplay, the bar just shows
+  // Play and nothing is lost.
+  if (sessionStorage.getItem(K.on) === '1') {
+    load(idx, parseFloat(sessionStorage.getItem(K.t) || '0') || 0);
+    claim();
+    var resumed = audio.play();
+    if (resumed && resumed.catch) resumed.catch(function () { paint(); });
+  }
 })();
