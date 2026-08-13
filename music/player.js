@@ -1,7 +1,7 @@
 /* FEVER — bottom bar player (entrance + deck)
  *
  * Self-hosted audio. No YouTube, no ads, no third-party player, nothing
- * to clear. Plays "Anything to Anything" in numbered order, 01 → 16.
+ * to clear. Plays "Artist - Music Name" in numbered order, 01 → 16.
  *
  * Two behaviours are deliberate and worth not undoing:
  *
