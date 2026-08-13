@@ -33,13 +33,16 @@ if you need a PDF.
 
 ## The entrance video slots
 
-`index.html` cycles three full-bleed clips behind the wordmark, crossfading
-between them. Drop files in and they just work — nothing to wire up.
+`index.html` cycles four full-bleed clips behind the wordmark, crossfading
+between them. Drop files in and they just work — nothing to wire up. To add a
+fifth, copy one `.bg` block in `index.html`; the tick indicators count
+themselves.
 
 ```
 video/01.mp4   +  video/01.jpg   ← poster, shown before the clip paints
 video/02.mp4   +  video/02.jpg
 video/03.mp4   +  video/03.jpg
+video/04.mp4   +  video/04.jpg
 ```
 
 **Spec**
@@ -59,10 +62,18 @@ ship as stills.
 Footage is graded in-page (`saturate(.72) contrast(1.08) brightness(.82)`) so it
 sits behind the type — render clips brighter than you want them to look.
 
-Current state: `01.mp4` is a Runway Gen-3 clip (960×576, 24fps, 10.5s) built
-from the foam-night photograph. It's below 1080p so it softens when blown up
-full-bleed; worth re-rendering at 1920×1080 when convenient. `02` and `03` are
-posters awaiting clips.
+Current state — all four are below 1080p, so they soften when blown up
+full-bleed; worth re-rendering at 1920×1080 when convenient:
+
+| | | |
+|---|---|---|
+| `01` | Runway Gen-3, 960×576 | 10.5s |
+| `02` | Magnific i2v, 864×496 | 5.0s |
+| `03` | Magnific i2v, 864×496 | 5.0s |
+| `04` | montage, 864×496 | 10.0s |
+
+Generated audio tracks are stripped from all of them — the clips play muted
+and the score comes from the bar player.
 
 To re-encode anything to spec:
 
