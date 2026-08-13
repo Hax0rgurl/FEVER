@@ -101,9 +101,7 @@ Drop the real ones in; nothing else needs to change.
 
 **Behaviour worth not undoing:**
 
-*It never starts on a cold load.* An earlier YouTube-backed build auto-
-resumed from `sessionStorage` on every page load, which meant each open tab
-and each reload layered another song on top of the last. Playback now begins
+*It never starts on a cold load.* Playback now begins
 on a click. It *does* carry from the entrance into the deck — but only when
 the listener already pressed play in that session, so the music doesn't stop
 at the door.
@@ -116,14 +114,6 @@ stays fast for anyone who never turns the sound on.
 
 The bar reserves 56px at the bottom; the deck's slide height and its HUD are
 offset to match, so no slide is ever cut off.
-
-### Why not YouTube
-
-An earlier version streamed a period playlist through YouTube's embed. It
-worked — full tracks, driven by explicit video IDs because the `list=`
-parameter refuses to embed — but those uploads are monetised, so **ads played
-over the cover slide**, and no player parameter disables that. Original music
-removes the problem entirely.
 
 ## Editing
 
@@ -147,13 +137,3 @@ npx parcel build index.html --no-source-maps --dist-dir dist
 npx html-inline -i dist/index.html > ../index.html
 ```
 
-## Notes on the copy
-
-Transcribed from the original 19-slide deck. Two typos were corrected —
-"ephiphany" → epiphany (Ep 2) and "think abou" → about (Ep 3). One inconsistency
-was left intact because it exists in the source: the book's back cover says a Fever
-hour cost you *"a week off of your life"*, while the closing Humberto Guida quote
-says *"a day off your life."*
-
-Photography in the Photos slide is a mix of deck material and period placeholders;
-swap entries in the `gallery` array in `App.tsx`.
