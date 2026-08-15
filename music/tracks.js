@@ -13,7 +13,6 @@ window.FEVER_TRACKS = [
   { f: "05.mp3", t: "Sesame's Treat" },
   { f: "06.mp3", t: "Bombscare - 2 Bad Mice" },
   { f: "07.mp3", t: "Josh Wink - Higher State of Consciousness" },
-  { f: "08.mp3", t: "Anything to Anything · VIII" },
   { f: "09.mp3", t: "Dynamix II" },
   { f: "10.mp3", t: "The Cotton Club - Nu Jack" },
   { f: "11.mp3", t: "Paul Van Dyke - Forbidden Fruit" },
