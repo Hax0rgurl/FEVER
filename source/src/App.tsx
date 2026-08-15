@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import * as img from "./assets";
 import {
   ABOUT, BOOK_COPY, BOOK_URL, CHARACTERS, CREED, MAIN_CAST, PALETTE, SECTIONS,
-  SEASON_ONE_A, SEASON_ONE_B, SEASON_TWO_A, SEASON_TWO_B, SETTING_LINES,
+  SEASON_ONE_A, SEASON_ONE_B, SEASON_TWO_A, SEASON_TWO_B, SETTING_LINES, STATEMENT,
   SUPPORTING_1, SUPPORTING_2, type Ep,
 } from "./data";
 
@@ -256,23 +256,28 @@ export default function App() {
           </div>
         </Section>
 
-        {/* 03 — CREED */}
+        {/* 03 — STATEMENT */}
         <Section i={2} className="creed">
-          <Reveal>
-            <p className="creed__pre">
-              This is a time of <b>pre-social media</b>. Photos and video do not exist.
-              Reputation spreads only by word of mouth and myth spreads faster than truth.
-            </p>
-          </Reveal>
+          <div className="statement">
+            {STATEMENT.map((l, i) => (
+              <Reveal key={l} delay={i * 120} className="statement__row">
+                <span>
+                  {l.split("*").map((part, n) =>
+                    n % 2 ? <em key={n}>{part}</em> : part,
+                  )}
+                </span>
+              </Reveal>
+            ))}
+          </div>
           <div className="creed__lines">
             {CREED.map((l, i) => (
-              <Reveal key={l} delay={i * 110} className="line">
+              <Reveal key={l} delay={420 + i * 110} className="line">
                 <span>{l}</span>
                 <span>{String(i + 1).padStart(2, "0")}</span>
               </Reveal>
             ))}
           </div>
-          <Reveal delay={340}>
+          <Reveal delay={760}>
             <p className="creed__post">
               For first-generation Cuban-American youth, these nights are not rebellion —
               they are <i>reinvention</i>.

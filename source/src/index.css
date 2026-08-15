@@ -359,15 +359,30 @@ a { color: inherit; }
    3 — CREED
    ============================================================ */
 .creed { text-align: left; }
-.creed__pre {
-  font-size: clamp(1rem, 1.6vw, 1.35rem);
-  line-height: 1.5; color: var(--dim); max-width: 40ch; margin: 0 0 clamp(2rem, 5vh, 3.5rem);
+
+/* Jill's highlighted-band statement. The background sits on the inline span
+   with box-decoration-break:clone so each wrapped line gets its own band,
+   exactly like the reference — the bands end with the text, not the column. */
+.statement { max-width: 1180px; margin: 0 0 clamp(1.6rem, 4.5vh, 2.8rem); }
+.statement__row { margin-bottom: .18em; }
+.statement__row span {
+  font-family: var(--display);
+  text-transform: uppercase;
+  font-size: clamp(1.05rem, 2.9vw, 2.35rem);
+  line-height: 1.44;
+  letter-spacing: 0.005em;
+  color: rgba(239, 233, 222, 0.62);
+  background: #000;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.16em 0.34em;
 }
-.creed__pre b { color: var(--paper); font-weight: 400; }
+.statement__row em { font-style: normal; color: var(--paper); }
+
 .creed__lines { border-top: 1px solid var(--line); max-width: 1100px; }
 .creed__lines .line {
   font-family: var(--display); text-transform: uppercase;
-  font-size: clamp(1.9rem, 6.4vw, 5.4rem);
+  font-size: clamp(1.4rem, 4vw, 3.4rem);
   line-height: 0.95; letter-spacing: -0.02em;
   padding: clamp(0.5rem, 1.6vh, 1rem) 0;
   border-bottom: 1px solid var(--line);

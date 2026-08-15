@@ -30,6 +30,15 @@ export const SETTING_LINES = [
   "Pagers, flyers, car trunks filled with cash…",
 ];
 
+// Jill's format: the statement in CAPS, each line on its own highlighted band.
+// Text between asterisks is emphasised, matching how she marked "pre-social
+// media" in the reference.
+export const STATEMENT = [
+  "This is a time of *pre-social media.*",
+  "Photos and video do not exist.",
+  "Reputation spreads only by word of mouth and myth spreads faster than truth.",
+];
+
 export const CREED = [
   "The rave becomes church.",
   "Bass becomes confession.",
