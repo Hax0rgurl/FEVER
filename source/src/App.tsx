@@ -18,6 +18,24 @@ const FACES: Record<string, string> = {
   fmom: img.face_fmom, fgrand: img.face_fgrand, kiera: img.face_kiera,
 };
 
+// 12-column x 3-row mosaic; every row sums to 12.
+// The two upright photographs sit in two-row cells whose aspect nearly
+// matches their own, so cover barely crops them. In a single-row cell they
+// become landscape slots and cover slices a band out of the middle, which
+// beheaded the PERVERT portrait. `pos` steers what cover keeps elsewhere.
+// The Cosmos collage was dropped — it contains the same photograph of the
+// three girls that already has its own tile.
+const GALLERY = [
+  { src: img.crew, cap: "Fever Crew", col: 3, row: 2 },
+  { src: img.tex_dj, cap: "Decks · analog", col: 6 },
+  { src: img.pervert, cap: "Fever Crew", col: 3, row: 2, pos: "50% 26%" },
+  { src: img.tex_floor, cap: "Checkerboard", col: 6 },
+  { src: img.girls, cap: "Front room", col: 4, pos: "50% 32%" },
+  { src: img.foam, cap: "Foam night", col: 3 },
+  { src: img.crowd5, cap: "After hours", col: 3 },
+  { src: img.tex_pile, cap: "Chill-out", col: 2 },
+];
+
 const ACCENT: Record<string, string> = {
   ember: "var(--ember)", amber: "var(--amber)", teal: "var(--teal)",
   rose: "var(--rose)", sand: "var(--sand)",
@@ -108,14 +126,32 @@ export default function App() {
   const [active, setActive] = useState(0);
   const [pct, setPct] = useState(0);
   const [index, setIndex] = useState(false);
+  const [lightbox, setLightbox] = useState<number | null>(null);
 
   const goto = useCallback((i: number) => {
     const clamped = Math.max(0, Math.min(SECTIONS.length - 1, i));
-    document.getElementById(SECTIONS[clamped].id)?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      block: "start",
-    });
+    const el = document.getElementById(SECTIONS[clamped].id);
+    const deck = deckRef.current;
     setIndex(false);
+    if (!el || !deck) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Scroll the container rather than el.scrollIntoView — sections are
+    // positioned against .deck, so offsetTop is the exact target.
+    const target = el.offsetTop;
+    const from = deck.scrollTop;
+    // "instant", not "auto" — auto defers to CSS, and .deck sets
+    // scroll-behavior: smooth, so "auto" would animate after all.
+    deck.scrollTo({ top: target, behavior: reduce ? "instant" : "smooth" });
+    // Safety net: some environments accept a smooth scroll and never run it
+    // (notably inside scroll-snap-type: mandatory), which would leave every
+    // control — arrows, HUD, rail, index — apparently dead. If nothing has
+    // moved at all shortly after, land it outright. A real animation will
+    // have advanced well before this fires, so it never interrupts one.
+    if (!reduce && Math.abs(target - from) > 4) {
+      window.setTimeout(() => {
+        if (deck.scrollTop === from) deck.scrollTo({ top: target, behavior: "instant" });
+      }, 280);
+    }
   }, []);
 
   useEffect(() => {
@@ -139,6 +175,14 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // While a photo is open it owns the keyboard, so the arrows page through
+      // the gallery rather than advancing the slide behind it.
+      if (lightbox !== null) {
+        if (e.key === "Escape") { e.preventDefault(); setLightbox(null); }
+        else if (e.key === "ArrowRight") { e.preventDefault(); setLightbox((v) => ((v ?? 0) + 1) % GALLERY.length); }
+        else if (e.key === "ArrowLeft") { e.preventDefault(); setLightbox((v) => ((v ?? 0) - 1 + GALLERY.length) % GALLERY.length); }
+        return;
+      }
       if (e.key === "Escape") return setIndex(false);
       if (e.key.toLowerCase() === "g") return setIndex((v) => !v);
       if (index) return;
@@ -151,23 +195,9 @@ export default function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [active, goto, index]);
+  }, [active, goto, index, lightbox]);
 
-  // 12-column x 3-row mosaic; each row sums to 12.
-  const gallery = useMemo(
-    () => [
-      { src: img.crew, cap: "Fever Crew", col: 4, row: 2 },
-      { src: img.tex_dj, cap: "Decks · analog", col: 5 },
-      { src: img.girls, cap: "Front room", col: 3, row: 2 },
-      { src: img.tex_floor, cap: "Checkerboard", col: 3 },
-      { src: img.crowd5, cap: "After hours", col: 2 },
-      { src: img.foam, cap: "Foam night", col: 3 },
-      { src: img.tex_pile, cap: "Chill-out", col: 3 },
-      { src: img.pervert, cap: "Fever Crew", col: 3 },
-      { src: img.cosmos, cap: "Cosmos II · Orlando · 3.2.96", col: 3 },
-    ],
-    [],
-  );
+  const gallery = GALLERY;
 
   return (
     <>
@@ -191,6 +221,27 @@ export default function App() {
         </button>
         <button onClick={() => goto(active + 1)} disabled={active === SECTIONS.length - 1} aria-label="Next">→</button>
       </div>
+
+      {lightbox !== null && (
+        <div className="lb" role="dialog" aria-modal="true" aria-label={GALLERY[lightbox].cap}
+             onClick={() => setLightbox(null)}>
+          <button className="lb__x" type="button" aria-label="Close">✕</button>
+          <button className="lb__nav lb__nav--prev" type="button" aria-label="Previous photo"
+                  onClick={(e) => { e.stopPropagation(); setLightbox((v) => ((v ?? 0) - 1 + GALLERY.length) % GALLERY.length); }}>‹</button>
+          <figure className="lb__fig" onClick={(e) => e.stopPropagation()}>
+            {/* No width is set, so the image renders at its own pixel size and
+                only ever shrinks to fit. These are AI upscales — displaying
+                them past 1:1 would just magnify the artefacts. */}
+            <img src={GALLERY[lightbox].src} alt={GALLERY[lightbox].cap} />
+            <figcaption>
+              <span>{GALLERY[lightbox].cap}</span>
+              <b>{lightbox + 1} / {GALLERY.length}</b>
+            </figcaption>
+          </figure>
+          <button className="lb__nav lb__nav--next" type="button" aria-label="Next photo"
+                  onClick={(e) => { e.stopPropagation(); setLightbox((v) => ((v ?? 0) + 1) % GALLERY.length); }}>›</button>
+        </div>
+      )}
 
       {index && (
         <div className="index" role="dialog" aria-label="All slides">
@@ -463,11 +514,13 @@ export default function App() {
                 key={i}
                 style={{ gridColumn: `span ${g.col}`, gridRow: g.row ? `span ${g.row}` : undefined }}
               >
-                <img src={g.src} alt={g.cap} />
+                <button type="button" onClick={() => setLightbox(i)} aria-label={`Enlarge — ${g.cap}`}>
+                  <img src={g.src} alt={g.cap} style={{ objectPosition: g.pos ?? "50% 50%" }} />
+                </button>
               </figure>
             ))}
           </div>
-          <p className="gallery__note">Archive · Miami · 1994—1997</p>
+          <p className="gallery__note">Archive · Miami · 1994—1997 — click any photo to enlarge</p>
         </Section>
 
         {/* 17 — MOOD */}
