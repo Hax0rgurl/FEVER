@@ -350,7 +350,10 @@ export default function App() {
         {([
           [6, "Season One · The Ascent", "Episodes 1 — 4", SEASON_ONE_A, img.warsaw, "Warsaw Ballroom", "var(--amber)"],
           [7, "Season One · The Ascent", "Episodes 5 — 8", SEASON_ONE_B, img.warsaw, "Warsaw Ballroom", "var(--amber)"],
-          [8, "Season Two · The Descent", "Episodes 9 — 12", SEASON_TWO_A, img.flyer_feb24, "Fever · Friday, February 24", "var(--teal)"],
+          // The Never Ending Story is the show behind Ep 9's "bigger venues,
+          // out-of-town DJs" and Ep 12's "biggest party yet" — the night the
+          // security went unpaid and the turnstiles were overrun.
+          [8, "Season Two · The Descent", "Episodes 9 — 12", SEASON_TWO_A, img.flyer_nes, "The Never Ending Story · 6.15.96", "var(--teal)"],
           [9, "Season Two · The Descent", "Episodes 13 — 16", SEASON_TWO_B, img.flyer_feb24, "Fever · Friday, February 24", "var(--teal)"],
         ] as const).map(([i, title, eps, list, art, cap, accent]) => (
           <Section key={i} i={i}>
