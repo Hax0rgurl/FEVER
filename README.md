@@ -96,7 +96,7 @@ music/tracks.js               order + titles — edit this
 music/player.js               the bar
 ```
 
-Titles in `tracks.js` are placeholders (`Anything to Anything · I …`).
+Titles in `tracks.js` are (`Song - Artist`).
 Drop the real ones in; nothing else needs to change.
 
 **Behaviour worth not undoing:**
