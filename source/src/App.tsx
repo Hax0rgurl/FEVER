@@ -221,7 +221,9 @@ export default function App() {
                 <span>Miami</span><span>·</span><span>1994 — 1997</span><span>·</span><span>Limited Series</span>
               </div>
               <p className="cover__tag">
-                Back in the day, the rave scene was beautiful… <i>until things got out of hand.</i>
+                <span>Back in the day,</span>
+                <span>the rave scene was beautiful…</span>
+                <i>until things got out of hand.</i>
               </p>
               <div className="cover__meta">
                 <span>2 Seasons</span><span>16 Episodes</span><span>Crime · Coming-of-Age</span>

@@ -7,7 +7,7 @@
  */
 window.FEVER_TRACKS = [
   { f: "01.mp3", t: "Skylab - Seashell" },
-  { f: "02.mp3", t: "Rising High Collective - Feel The Fire" },
+  { f: "13.mp3", t: "K5 - Passion" },
   { f: "03.mp3", t: "DJ Icey - Love" },
   { f: "04.mp3", t: "DJ Icey - Low Down Good Girl" },
   { f: "05.mp3", t: "Sesame's Treat" },
@@ -17,7 +17,7 @@ window.FEVER_TRACKS = [
   { f: "10.mp3", t: "The Cotton Club - Nu Jack" },
   { f: "11.mp3", t: "Paul Van Dyke - Forbidden Fruit" },
   { f: "12.mp3", t: "HardKiss - OBE" },
-  { f: "13.mp3", t: "K5 - Passion" },
-  { f: "15.mp3", t: "Trip Theory - 8 Days a Tweak" },
+  { f: "02.mp3", t: "Rising High Collective - Feel The Fire" },
+  { f: "15.mp3", t: "Trip Theory - 8 Days a Tweak" }
 ];
 window.FEVER_AUDIO_DIR = "music/audio/";

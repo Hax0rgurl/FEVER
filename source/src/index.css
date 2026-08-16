@@ -263,14 +263,16 @@ a { color: inherit; }
   flex-wrap: wrap;
 }
 .cover__rule span:nth-child(even) { color: var(--dimmer); }
+/* Broken exactly as the book's back cover sets it — three fixed lines,
+   never reflowed by the viewport. */
 .cover__tag {
   font-size: clamp(1.15rem, 2.1vw, 1.75rem);
-  line-height: 1.35;
-  max-width: 22ch;
+  line-height: 1.5;
   margin: 0 0 2rem;
   color: var(--paper);
 }
-.cover__tag i { font-style: normal; color: var(--ember); }
+.cover__tag span, .cover__tag i { display: block; font-style: normal; }
+.cover__tag i { color: var(--ember); }
 .cover__meta {
   display: flex; flex-wrap: wrap; gap: 0 1.6rem;
   font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.2em;
