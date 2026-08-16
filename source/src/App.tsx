@@ -163,8 +163,8 @@ export default function App() {
       { src: img.crowd5, cap: "After hours", col: 2 },
       { src: img.foam, cap: "Foam night", col: 3 },
       { src: img.tex_pile, cap: "Chill-out", col: 3 },
-      { src: img.tex_pacif, cap: "Sunrise", col: 3 },
-      { src: img.tex_balloon, cap: "Balloons", col: 3 },
+      { src: img.pervert, cap: "Fever Crew", col: 3 },
+      { src: img.cosmos, cap: "Cosmos II · Orlando · 3.2.96", col: 3 },
     ],
     [],
   );
