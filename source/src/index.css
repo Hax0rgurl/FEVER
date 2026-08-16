@@ -365,13 +365,17 @@ a { color: inherit; }
 /* Jill's highlighted-band statement. The background sits on the inline span
    with box-decoration-break:clone so each wrapped line gets its own band,
    exactly like the reference — the bands end with the text, not the column. */
-.statement { max-width: 1180px; margin: 0 0 clamp(1.6rem, 4.5vh, 2.8rem); }
-.statement__row { margin-bottom: .18em; }
+/* Sized to sit under the creed rather than compete with it — Jill wanted the
+   rave/bass/ecstasy lines back at full size, and both cannot be the loudest
+   thing on the slide. Small enough here that the long third line stays on one
+   row at desk widths. */
+.statement { max-width: 1180px; margin: 0 0 clamp(1.1rem, 3vh, 1.9rem); }
+.statement__row { margin-bottom: .16em; }
 .statement__row span {
   font-family: var(--display);
   text-transform: uppercase;
-  font-size: clamp(1.05rem, 2.9vw, 2.35rem);
-  line-height: 1.44;
+  font-size: clamp(0.92rem, 2.15vw, 1.7rem);
+  line-height: 1.4;
   letter-spacing: 0.005em;
   color: rgba(239, 233, 222, 0.62);
   background: #000;
@@ -382,11 +386,12 @@ a { color: inherit; }
 .statement__row em { font-style: normal; color: var(--paper); }
 
 .creed__lines { border-top: 1px solid var(--line); max-width: 1100px; }
+/* Back to the original scale — this is the moment of the slide. */
 .creed__lines .line {
   font-family: var(--display); text-transform: uppercase;
-  font-size: clamp(1.4rem, 4vw, 3.4rem);
+  font-size: clamp(1.9rem, 6.4vw, 5.4rem);
   line-height: 0.95; letter-spacing: -0.02em;
-  padding: clamp(0.5rem, 1.6vh, 1rem) 0;
+  padding: clamp(0.4rem, 1.35vh, 0.9rem) 0;
   border-bottom: 1px solid var(--line);
   display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
 }
@@ -395,7 +400,7 @@ a { color: inherit; }
   color: var(--teal); flex: none;
 }
 .creed__post {
-  margin: clamp(2rem, 5vh, 3.2rem) 0 0;
+  margin: clamp(1.2rem, 3.2vh, 2.1rem) 0 0;
   font-size: clamp(1rem, 1.5vw, 1.25rem); line-height: 1.5;
   max-width: 52ch; color: var(--paper);
 }
