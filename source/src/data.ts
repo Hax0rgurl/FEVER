@@ -113,7 +113,7 @@ export const SUPPORTING_1 = [
 
 export const SUPPORTING_2 = [
   { key: "fmom", role: "Frankie's Mom", actor: "Natalie Martinez is desired" },
-  { key: "fgrand", role: "Frankie's Grandparents", actor: "Emilio & Gloria Estefan are desired" },
+  { key: "fgrand", role: "Frankie's Grandparents", actor: "Tony Plana & Ada Maris are desired" },
   { key: "kiera", role: "Kiera the Infamous Doorgirl", actor: "Bella Thorne is desired" },
 ];
 
@@ -136,3 +136,11 @@ export const PALETTE = [
   { hex: "#000000", name: "After Hours" },
   { hex: "#E2DEDB", name: "Salt White" },
 ];
+
+// Shown small and quiet on the closing slide.
+export const CONTACT = {
+  lead:  "For more information please contact:",
+  name:  "Jill Rudison",
+  email: "jillrudison@gmail.com",
+  phone: "305.720.5455",
+};

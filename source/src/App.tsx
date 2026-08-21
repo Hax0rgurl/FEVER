@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import * as img from "./assets";
 import {
-  ABOUT, BOOK_COPY, BOOK_URL, CHARACTERS, CREED, MAIN_CAST, PALETTE, SECTIONS,
+  ABOUT, BOOK_COPY, BOOK_URL, CHARACTERS, CONTACT, CREED, MAIN_CAST, PALETTE, SECTIONS,
   SEASON_ONE_A, SEASON_ONE_B, SEASON_TWO_A, SEASON_TWO_B, SETTING_LINES, STATEMENT,
   SUPPORTING_1, SUPPORTING_2, type Ep,
 } from "./data";
@@ -399,8 +399,8 @@ export default function App() {
 
         {/* 07–10 — EPISODES */}
         {([
-          [6, "Season One · The Ascent", "Episodes 1 — 4", SEASON_ONE_A, img.warsaw, "Warsaw Ballroom", "var(--amber)"],
-          [7, "Season One · The Ascent", "Episodes 5 — 8", SEASON_ONE_B, img.warsaw, "Warsaw Ballroom", "var(--amber)"],
+          [6, "Season One · The Ascent", "Episodes 1 — 4", SEASON_ONE_A, img.club, "The ballroom · before Fever", "var(--amber)"],
+          [7, "Season One · The Ascent", "Episodes 5 — 8", SEASON_ONE_B, img.flyer_pile, "Flyers become art", "var(--amber)"],
           // The Never Ending Story is the show behind Ep 9's "bigger venues,
           // out-of-town DJs" and Ep 12's "biggest party yet" — the night the
           // security went unpaid and the turnstiles were overrun.
@@ -581,6 +581,14 @@ export default function App() {
                 <div className="endcard">
                   <span>Fever</span><span>2 Seasons · 16 Episodes</span><span>Miami 1994—1997</span>
                 </div>
+              </Reveal>
+              <Reveal delay={280}>
+                <address className="contact">
+                  <span className="contact__lead">{CONTACT.lead}</span>
+                  <span className="contact__name">{CONTACT.name}</span>
+                  <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+                  <a href={`tel:${CONTACT.phone.replace(/\./g, "")}`}>{CONTACT.phone}</a>
+                </address>
               </Reveal>
             </div>
             <Reveal delay={140} className="close__sign">

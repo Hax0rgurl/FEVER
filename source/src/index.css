@@ -736,8 +736,8 @@ a { color: inherit; }
    19 — CLOSE
    ============================================================ */
 .close__grid {
-  display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
-  gap: clamp(1.5rem, 4vw, 4rem); align-items: center;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.92fr);
+  gap: clamp(1.2rem, 3vw, 2.6rem); align-items: center;
 }
 @media (max-width: 860px) { .close__grid { grid-template-columns: 1fr; } }
 .quote {
@@ -750,7 +750,8 @@ a { color: inherit; }
   font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.22em;
   text-transform: uppercase; color: var(--sand);
 }
-.close__sign img { width: 100%; max-width: 380px; margin-inline: auto; }
+.close__sign { justify-self: center; }
+.close__sign img { width: 100%; max-width: 470px; margin-inline: auto; }
 .endcard {
   margin-top: clamp(2rem, 5vh, 3.4rem); padding-top: 1.2rem;
   border-top: 1px solid var(--line);
@@ -858,7 +859,7 @@ a { color: inherit; }
 .mood__grid { --cap: 52svh; }
 .night__grid { --cap: 50svh; }
 .night__grid .photo-frame { --cap: 26svh; }
-.close__sign { --cap: 42svh; }
+.close__sign { --cap: 52svh; }
 
 @media (max-height: 760px) {
   .sec { padding-top: 3.2rem; padding-bottom: 2.4rem; }
@@ -907,3 +908,23 @@ a { color: inherit; }
   .sec { min-height: auto; page-break-after: always; padding: 1.5cm; }
   body { background: #fff; color: #000; }
 }
+
+/* Closing-slide contact. Deliberately small and low-contrast: present for
+   anyone who wants it, never competing with the quote. */
+.contact {
+  font-style: normal;
+  margin-top: clamp(1rem, 2.6vh, 1.6rem);
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  gap: 0.25rem 1.1rem;
+  font-family: var(--mono);
+  font-size: clamp(0.56rem, 0.72vw, 0.64rem);
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--dimmer);
+}
+/* The lead takes its own line so the three details sit together on one
+   row instead of the phone number orphaning onto a third. */
+.contact__lead { flex: 0 0 100%; color: rgba(239, 233, 222, 0.28); }
+.contact__name { color: var(--sand); }
+.contact a { color: var(--dimmer); text-decoration: none; border-bottom: 1px solid var(--line-soft); }
+.contact a:hover { color: var(--ember); border-bottom-color: var(--ember); }
+@media (max-width: 620px) { .contact { gap: 0.2rem 0.8rem; } }
