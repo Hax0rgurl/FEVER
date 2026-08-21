@@ -108,7 +108,7 @@ export const SUPPORTING_1 = [
   { key: "jenny", role: "Jenny", actor: "Tess Romero is desired" },
   { key: "ivan", role: "Ivan", actor: "Tyler Alvarez is desired" },
   { key: "mendoza", role: "Officer Mendoza", actor: "Andy Garcia is desired" },
-  { key: "pino", role: "Manny's Dad · Mr. Pino", actor: "Stephen Bauer is desired" },
+  { key: "pino", role: "Manny's Dad · Mr. Pino", actor: "Steven Bauer is desired" },
 ];
 
 export const SUPPORTING_2 = [
